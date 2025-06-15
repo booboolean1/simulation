@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appraise | Neural Valuation System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dark: #0a0a0a;
+            --darker: #050505;
+            --light: #f0f0f0;
+            --medium: #888;
+            --accent: #00d1ff;
+            --success: #00ff9d;
+            --processing: #be95ff;
+            --pending: #777;
+            --card-bg: rgba(20, 20, 20, 0.85);
+            --glow: 0 0 15px rgba(0, 209, 255, 0.3);
+            --platinum: #e5e4e2;
+            --titanium: #878681;
+            --silver: #c0c0c0;
+            --accent-gradient: linear-gradient(45deg, #00d1ff, #be95ff);
+            --success-gradient: linear-gradient(45deg, #00ff9d, #00d1ff);
+            --pending-gradient: linear-gradient(45deg, #777, #aaa);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(ellipse at bottom, #0d0d0d 0%, #050505 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--light);
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px;
+        }
+
+        .hologram-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        .hologram-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(229, 228, 226, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 80% 70%, rgba(192, 192, 192, 0.05) 0%, transparent 20%);
+            z-index: -1;
+            opacity: 0.2;
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--platinum);
+            opacity: 0.1;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 0.2; }
+            90% { opacity: 0.05; }
+            100% { transform: translateY(-100vh) translateX(20vw); opacity: 0; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            padding: 30px;
+            z-index: 10;
+        }
+
+        /* Premium Header - Refined */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 35px;
+            position: relative;
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(18, 18, 18, 0.95));
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 30px rgba(229, 228, 226, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(90deg, transparent 50%, rgba(229, 228, 226, 0.03) 50%),
+                linear-gradient(transparent 50%, rgba(229, 228, 226, 0.03) 50%);
+            background-size: 60px 60px;
+            opacity: 0.2;
+            z-index: -1;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        .logo-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
+            border-radius: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--platinum);
+            font-size: 32px;
+            box-shadow: 
+                0 8px 25px rgba(0, 0, 0, 0.7), 
+                0 0 0 1px rgba(229, 228, 226, 0.1),
+                0 0 20px rgba(229, 228, 226, 0.2);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            animation: pulse 3s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(229, 228, 226, 0.1), 0 0 20px rgba(229, 228, 226, 0.2); }
+            50% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(229, 228, 226, 0.1), 0 0 30px rgba(229, 228, 226, 0.4); }
+            100% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(229, 228, 226, 0.1), 0 0 20px rgba(229, 228, 226, 0.2); }
+        }
+
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 30%, rgba(229, 228, 226, 0.3) 50%, transparent 70%);
+            animation: shine 4s infinite;
+            z-index: -1;
+        }
+
+        @keyframes shine {
+            0% { transform: rotate(0deg) translateX(-50%); }
+            100% { transform: rotate(360deg) translateX(-50%); }
+        }
+
+        .logo-text {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--light);
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, var(--platinum), var(--silver));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-subtext {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--titanium);
+            margin-top: 4px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .property-info {
+            text-align: right;
+            padding: 18px 28px;
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(229, 228, 226, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .property-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(45deg, transparent 70%, rgba(229, 228, 226, 0.05) 100%);
+            z-index: -1;
+        }
+
+        .property-address {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--platinum);
+            position: relative;
+            display: inline-block;
+            letter-spacing: -0.5px;
+        }
+
+        .property-address::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, var(--platinum), transparent);
+        }
+
+        .property-meta {
+            font-size: 16px;
+            color: var(--titanium);
+            display: flex;
+            gap: 18px;
+            font-weight: 500;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        /* Progress Section - Enhanced */
+        .progress-section {
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(18, 18, 18, 0.95));
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 
+                0 15px 40px rgba(0, 0, 0, 0.7), 
+                0 0 30px rgba(229, 228, 226, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+        }
+
+        .progress-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--accent-gradient);
+        }
+
+        .progress-section::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(229, 228, 226, 0.03) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(192, 192, 192, 0.03) 0%, transparent 20%);
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        .progress-title {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 30px;
+            color: var(--platinum);
+            text-align: center;
+            position: relative;
+            letter-spacing: -0.5px;
+            text-shadow: 0 0 15px rgba(229, 228, 226, 0.4);
+        }
+
+        .progress-title::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: var(--accent-gradient);
+            border-radius: 3px;
+        }
+
+        .progress-container {
+            display: flex;
+            width: 100%;
+            max-width: 1100px;
+            gap: 60px;
+            align-items: center;
+            margin: 30px 0;
+        }
+
+        .holographic-progress {
+            position: relative;
+            width: 240px;
+            height: 240px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        .hologram-sphere {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(229, 228, 226, 0.1), transparent 70%);
+            box-shadow: 
+                0 0 50px rgba(229, 228, 226, 0.15),
+                inset 0 0 50px rgba(0, 0, 0, 0.8);
+            position: relative;
+            transform-style: preserve-3d;
+            animation: rotateSphere 20s infinite linear;
+        }
+
+        @keyframes rotateSphere {
+            0% { transform: rotateY(0deg) rotateX(15deg); }
+            100% { transform: rotateY(360deg) rotateX(15deg); }
+        }
+
+        .sphere-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-image: 
+                radial-gradient(circle at center, transparent 65%, rgba(229, 228, 226, 0.1) 100%),
+                radial-gradient(circle at center, transparent 65%, rgba(192, 192, 192, 0.1) 100%);
+            background-size: 220px 220px;
+            transform: rotateX(75deg);
+        }
+
+        .sphere-inner {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 70% 30%, rgba(192, 192, 192, 0.1), transparent 70%);
+            top: 10%;
+            left: 10%;
+            box-shadow: 
+                inset 0 0 30px rgba(0, 0, 0, 0.9),
+                0 0 20px rgba(229, 228, 226, 0.1);
+        }
+
+        .progress-content {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .progress-status {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--platinum);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-shadow: 0 0 15px rgba(229, 228, 226, 0.4);
+        }
+
+        .progress-label {
+            font-size: 16px;
+            color: var(--titanium);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .progress-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .progress-text {
+            font-size: 18px;
+            color: var(--platinum);
+            text-align: left;
+            line-height: 1.7;
+            padding: 20px 25px;
+            background: rgba(15, 15, 15, 0.7);
+            border-radius: 14px;
+            border-left: 3px solid var(--processing);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .time-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 22px 40px;
+            border-radius: 16px;
+            background: rgba(20, 20, 20, 0.8);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .time-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(45deg, transparent 70%, rgba(229, 228, 226, 0.05) 100%);
+            z-index: -1;
+        }
+
+        .time-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--platinum);
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 15px rgba(229, 228, 226, 0.4);
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .time-label {
+            font-size: 16px;
+            color: var(--titanium);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        /* Agents Container - Enhanced */
+        .agents-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+            gap: 30px;
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(18, 18, 18, 0.95));
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 
+                0 15px 40px rgba(0, 0, 0, 0.7), 
+                0 0 30px rgba(229, 228, 226, 0.1);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+        }
+
+        .agents-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(229, 228, 226, 0.03) 0%, transparent 20%),
+                radial-gradient(circle at 80% 70%, rgba(192, 192, 192, 0.03) 0%, transparent 20%);
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        .section-title {
+            grid-column: 1 / -1;
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            color: var(--platinum);
+            letter-spacing: -0.5px;
+            position: relative;
+            padding-bottom: 20px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 120px;
+            height: 3px;
+            background: var(--accent-gradient);
+            border-radius: 3px;
+        }
+
+        .agent-card {
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            border-radius: 18px;
+            background: rgba(20, 20, 20, 0.8);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(45deg, transparent 70%, rgba(229, 228, 226, 0.05) 100%);
+            z-index: -1;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.5), 
+                0 0 25px rgba(229, 228, 226, 0.2);
+        }
+
+        .agent-card.active {
+            border-left: 4px solid var(--processing);
+            background: linear-gradient(to right, rgba(25, 25, 25, 0.85) 90%, rgba(15, 15, 15, 0.7) 100%);
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.5), 
+                0 0 30px rgba(190, 149, 255, 0.3);
+        }
+
+        .agent-card.completed {
+            background: rgba(15, 30, 20, 0.7);
+            border: 1px solid rgba(0, 255, 157, 0.3);
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .agent-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            color: var(--dark);
+            background: linear-gradient(135deg, var(--platinum), var(--silver));
+            flex-shrink: 0;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        .agent-icon::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.5) 50%, transparent 70%);
+            animation: shine 4s infinite;
+            z-index: 0;
+        }
+
+        .agent-info {
+            flex-grow: 1;
+        }
+
+        .agent-name {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--platinum);
+            margin-bottom: 8px;
+            letter-spacing: -0.3px;
+        }
+
+        .agent-status {
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--titanium);
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .status-pending {
+            background: var(--pending);
+        }
+
+        .status-active {
+            background: var(--processing);
+            box-shadow: 0 0 15px rgba(190, 149, 255, 0.6);
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(190, 149, 255, 0.6); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(190, 149, 255, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(190, 149, 255, 0); }
+        }
+
+        .status-completed {
+            background: var(--success);
+            box-shadow: 0 0 12px rgba(0, 255, 157, 0.6);
+        }
+
+        .agent-description {
+            font-size: 16px;
+            color: var(--titanium);
+            line-height: 1.6;
+            margin-bottom: 20px;
+            font-weight: 400;
+        }
+
+        /* Neural Activation Visualization */
+        .neural-activation {
+            width: 100%;
+            height: 80px;
+            position: relative;
+            margin-top: 15px;
+            overflow: hidden;
+            border-radius: 10px;
+            background: rgba(12, 12, 12, 0.7);
+            border: 1px solid rgba(229, 228, 226, 0.1);
+        }
+
+        .activation-path {
+            position: absolute;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--processing), transparent);
+            top: 50%;
+            transform: translateY(-50%);
+            left: 0;
+            width: 0;
+            opacity: 0.7;
+            z-index: 1;
+        }
+
+        .activation-node {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--processing);
+            box-shadow: 0 0 12px var(--processing);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+        }
+
+        .activation-pulse {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--processing);
+            opacity: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 3;
+        }
+
+        .terminal {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #ddd;
+            height: 130px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid rgba(229, 228, 226, 0.15);
+            display: none;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.7);
+        }
+
+        .terminal-line {
+            margin-bottom: 6px;
+            display: flex;
+            gap: 10px;
+            line-height: 1.5;
+        }
+
+        .terminal-prompt {
+            color: var(--processing);
+            flex-shrink: 0;
+        }
+
+        .agent-card.active .terminal {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            color: var(--titanium);
+            font-size: 16px;
+            border-top: 1px solid rgba(229, 228, 226, 0.15);
+            font-weight: 500;
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(18, 18, 18, 0.95));
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.5), 
+                0 0 20px rgba(229, 228, 226, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer strong {
+            color: var(--platinum);
+            font-weight: 700;
+        }
+
+        .quantum-visualization {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            margin-top: 30px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(229, 228, 226, 0.15);
+        }
+
+        .quantum-particle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--platinum);
+            box-shadow: 0 0 10px var(--platinum);
+            animation: quantumFloat 10s infinite ease-in-out;
+        }
+
+        @keyframes quantumFloat {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(120px, 60px); }
+            50% { transform: translate(240px, -40px); }
+            75% { transform: translate(60px, 120px); }
+        }
+
+        .quantum-connection {
+            position: absolute;
+            height: 2px;
+            background: rgba(229, 228, 226, 0.2);
+            transform-origin: 0 0;
+        }
+
+        .ai-power-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 18px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--platinum);
+            box-shadow: 0 0 15px rgba(229, 228, 226, 0.2);
+            border: 1px solid rgba(229, 228, 226, 0.2);
+            z-index: 10;
+        }
+
+        /* Download Button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 30px;
+            margin-top: 25px;
+            background: var(--success-gradient);
+            color: #0a0a0a;
+            border: none;
+            border-radius: 30px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 25px rgba(0, 255, 157, 0.3);
+        }
+
+        .download-btn i {
+            font-size: 20px;
+        }
+
+        /* Responsive design - Enhanced */
+        @media (max-width: 1200px) {
+            .agents-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .header {
+                flex-direction: column;
+                gap: 25px;
+                text-align: center;
+            }
+            
+            .property-info {
+                text-align: center;
+                width: 100%;
+            }
+            
+            .progress-container {
+                flex-direction: column;
+                gap: 40px;
+            }
+            
+            .progress-details {
+                width: 100%;
+            }
+            
+            .agent-card {
+                padding: 20px;
+            }
+            
+            .agent-header {
+                gap: 15px;
+            }
+            
+            .agent-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+            
+            .progress-status {
+                font-size: 22px;
+            }
+            
+            .progress-title {
+                font-size: 32px;
+            }
+            
+            .holographic-progress {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .hologram-sphere {
+                width: 180px;
+                height: 180px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .property-meta {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .time-section {
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+            }
+            
+            .progress-text {
+                padding: 15px;
+            }
+            
+            .progress-section, .agents-container {
+                padding: 25px;
+            }
+            
+            .agent-name {
+                font-size: 20px;
+            }
+            
+            .agent-description {
+                font-size: 15px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hologram-grid"></div>
+    <div class="hologram-lines"></div>
+    <div class="particles" id="particles"></div>
+    
+    <div class="container">
+        <div class="ai-power-badge">
+            <i class="fas fa-bolt"></i> Agentic AI System
+        </div>
+        
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <div class="logo-text">AppraiseAI</div>
+                    <div class="logo-subtext">NEURAL VALUATION SYSTEM</div>
+                </div>
+            </div>
+            <div class="property-info">
+                <div class="property-address">123 Main St, Bloomington, IN</div>
+                <div class="property-meta">
+                    <span class="meta-item"><i class="fas fa-hashtag"></i> IN12345</span>
+                    <span class="meta-item"><i class="fas fa-bed"></i> 3 BD</span>
+                    <span class="meta-item"><i class="fas fa-bath"></i> 2.5 BA</span>
+                    <span class="meta-item"><i class="fas fa-ruler-combined"></i> 1,850 sq ft</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="progress-section">
+            <h2 class="progress-title">AI VALUATION IN PROGRESS</h2>
+            
+            <div class="progress-container">
+                <div class="holographic-progress">
+                    <div class="hologram-sphere">
+                        <div class="sphere-grid"></div>
+                        <div class="sphere-inner"></div>
+                    </div>
+                    <div class="progress-content">
+                        <div class="progress-status" id="progressStatus">PROCESSING</div>
+                        <div class="progress-label" id="progressLabel">Status</div>
+                    </div>
+                </div>
+                
+                <div class="progress-details">
+                    <div class="progress-text" id="progressText">Neural network processing property data across specialized sub AI agents...</div>
+                    
+                    <div class="time-section">
+                        <div class="time-value" id="timeValue">07:40</div>
+                        <div class="time-label">ESTIMATED COMPLETION TIME</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="quantum-visualization" id="quantumViz"></div>
+        </div>
+        
+        <div class="agents-container">
+            <div class="section-title">SUB AGENTS</div>
+            
+            <!-- Agent 1: Planning -->
+            <div class="agent-card" id="agent1">
+                <div class="agent-header">
+                    <div class="agent-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="agent-info">
+                        <div class="agent-name">Planning Agent</div>
+                        <div class="agent-status">
+                            <span class="status-indicator status-pending"></span>
+                            <span class="status-text">Pending</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-description">Developing the appraisal strategy and defining valuation parameters for the subject property</div>
+                <div class="neural-activation" id="activation1"></div>
+                <div class="terminal" id="terminal1"></div>
+            </div>
+            
+            <!-- Agent 2: Orchestration -->
+            <div class="agent-card" id="agent2">
+                <div class="agent-header">
+                    <div class="agent-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <div class="agent-info">
+                        <div class="agent-name">Orchestration Agent</div>
+                        <div class="agent-status">
+                            <span class="status-indicator status-pending"></span>
+                            <span class="status-text">Pending</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-description">Coordinating specialized agents to optimize workflow efficiency and data integration</div>
+                <div class="neural-activation" id="activation2"></div>
+                <div class="terminal" id="terminal2"></div>
+            </div>
+            
+            <!-- Agent 3: Document Analysis -->
+            <div class="agent-card" id="agent3">
+                <div class="agent-header">
+                    <div class="agent-icon">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <div class="agent-info">
+                        <div class="agent-name">Document Agent</div>
+                        <div class="agent-status">
+                            <span class="status-indicator status-pending"></span>
+                            <span class="status-text">Pending</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-description">Parsing and analyzing critical information from property documents and legal paperwork</div>
+                <div class="neural-activation" id="activation3"></div>
+                <div class="terminal" id="terminal3"></div>
+            </div>
+            
+            <!-- Agent 4: External Obsolescence -->
+            <div class="agent-card" id="agent4">
+                <div class="agent-header">
+                    <div class="agent-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="agent-info">
+                        <div class="agent-name">Obsolescence Agent</div>
+                        <div class="agent-status">
+                            <span class="status-indicator status-pending"></span>
+                            <span class="status-text">Pending</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-description">Evaluating external factors affecting property value including environmental and economic influences</div>
+                <div class="neural-activation" id="activation4"></div>
+                <div class="terminal" id="terminal4"></div>
+            </div>
+            
+            <!-- Agent 5: Public Records -->
+            <div class="agent-card" id="agent5">
+                <div class="agent-header">
+                    <div class="agent-icon">
+                        <i class="fas fa-archive"></i>
+                    </div>
+                    <div class="agent-info">
+                        <div class="agent-name">Records Agent</div>
+                        <div class="agent-status">
+                            <span class="status-indicator status-pending"></span>
+                            <span class="status-text">Pending</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-description">Researching historical property data and public records for valuation context</div>
+                <div class="neural-activation" id="activation5"></div>
+                <div class="terminal" id="terminal5"></div>
+            </div>
+            
+            <!-- Agent 6: References -->
+            <div class="agent-card" id="agent6">
+                <div class="agent-header">
+                    <div class="agent-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="agent-info">
+                        <div class="agent-name">Comp Selector Agent</div>
+                        <div class="agent-status">
+                            <span class="status-indicator status-pending"></span>
+                            <span class="status-text">Pending</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-description">Analyzing market for comparable properties and data for accurate valuation</div>
+                <div class="neural-activation" id="activation6"></div>
+                <div class="terminal" id="terminal6"></div>
+            </div>
+            
+            <!-- Agent 7: Quantitative Reasoning -->
+            <div class="agent-card" id="agent7">
+                <div class="agent-header">
+                    <div class="agent-icon">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <div class="agent-info">
+                        <div class="agent-name">Quantitative Agent</div>
+                        <div class="agent-status">
+                            <span class="status-indicator status-pending"></span>
+                            <span class="status-text">Pending</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-description">Performing statistical analysis and mathematical valuation calculations</div>
+                <div class="neural-activation" id="activation7"></div>
+                <div class="terminal" id="terminal7"></div>
+            </div>
+            
+            <!-- Agent 8: Qualitative Reasoning -->
+            <div class="agent-card" id="agent8">
+                <div class="agent-header">
+                    <div class="agent-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="agent-info">
+                        <div class="agent-name">Qualitative Agent</div>
+                        <div class="agent-status">
+                            <span class="status-indicator status-pending"></span>
+                            <span class="status-text">Pending</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-description">Assessing subjective property characteristics and market positioning</div>
+                <div class="neural-activation" id="activation8"></div>
+                <div class="terminal" id="terminal8"></div>
+            </div>
+            
+            <!-- Agent 9: Compliance Check -->
+            <div class="agent-card" id="agent9">
+                <div class="agent-header">
+                    <div class="agent-icon">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div class="agent-info">
+                        <div class="agent-name">Compliance Agent</div>
+                        <div class="agent-status">
+                            <span class="status-indicator status-pending"></span>
+                            <span class="status-text">Pending</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-description">Ensuring adherence to industry standards and regulatory requirements</div>
+                <div class="neural-activation" id="activation9"></div>
+                <div class="terminal" id="terminal9"></div>
+            </div>
+            
+            <!-- Agent 10: Form Population -->
+            <div class="agent-card" id="agent10">
+                <div class="agent-header">
+                    <div class="agent-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="agent-info">
+                        <div class="agent-name">Form Agent</div>
+                        <div class="agent-status">
+                            <span class="status-indicator status-pending"></span>
+                            <span class="status-text">Pending</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-description">Compiling findings into comprehensive appraisal report with visualizations</div>
+                <div class="neural-activation" id="activation10"></div>
+                <div class="terminal" id="terminal10"></div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 Appraise. Pioneering <strong>valuation modernization</strong> with multimodal agentic AI. Report ID: <strong>**-****-****</strong></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create particles
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 150; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                const size = Math.random() * 8 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100 + 100}%`;
+                particle.style.animationDuration = `${Math.random() * 20 + 10}s`;
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                particlesContainer.appendChild(particle);
+            }
+            
+            // Create quantum visualization
+            const quantumViz = document.getElementById('quantumViz');
+            const particles = [];
+            const connections = [];
+            
+            // Create particles
+            for (let i = 0; i < 25; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('quantum-particle');
+                particle.style.left = `${Math.random() * 95 + 2.5}%`;
+                particle.style.top = `${Math.random() * 85 + 7.5}%`;
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                quantumViz.appendChild(particle);
+                particles.push(particle);
+            }
+            
+            // Create connections
+            for (let i = 0; i < 40; i++) {
+                const connection = document.createElement('div');
+                connection.classList.add('quantum-connection');
+                quantumViz.appendChild(connection);
+                connections.push(connection);
+            }
+            
+            // Update quantum visualization
+            function updateQuantumViz() {
+                connections.forEach(conn => {
+                    const from = particles[Math.floor(Math.random() * particles.length)];
+                    const to = particles[Math.floor(Math.random() * particles.length)];
+                    
+                    if (from !== to) {
+                        const fromRect = from.getBoundingClientRect();
+                        const toRect = to.getBoundingClientRect();
+                        const containerRect = quantumViz.getBoundingClientRect();
+                        
+                        const fromX = fromRect.left - containerRect.left + fromRect.width/2;
+                        const fromY = fromRect.top - containerRect.top + fromRect.height/2;
+                        const toX = toRect.left - containerRect.left + toRect.width/2;
+                        const toY = toRect.top - containerRect.top + toRect.height/2;
+                        
+                        const length = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+                        const angle = Math.atan2(toY - fromY, toX - fromX) * 180 / Math.PI;
+                        
+                        conn.style.width = `${length}px`;
+                        conn.style.left = `${fromX}px`;
+                        conn.style.top = `${fromY}px`;
+                        conn.style.transform = `rotate(${angle}deg)`;
+                        conn.style.opacity = `${Math.random() * 0.4 + 0.1}`;
+                    }
+                });
+            }
+            
+            setInterval(updateQuantumViz, 400);
+            
+            // Agent processing functions
+            function updateAgentStatus(agentId, status) {
+                const agentCard = document.getElementById(`agent${agentId}`);
+                const statusIndicator = agentCard.querySelector('.status-indicator');
+                const statusText = agentCard.querySelector('.status-text');
+                
+                agentCard.classList.remove('active', 'completed');
+                
+                switch(status) {
+                    case 'pending':
+                        statusIndicator.className = 'status-indicator status-pending';
+                        statusText.textContent = 'Pending';
+                        break;
+                    case 'active':
+                        agentCard.classList.add('active');
+                        statusIndicator.className = 'status-indicator status-active';
+                        statusText.textContent = 'Processing';
+                        break;
+                    case 'completed':
+                        agentCard.classList.add('completed');
+                        statusIndicator.className = 'status-indicator status-completed';
+                        statusText.textContent = 'Completed';
+                        break;
+                }
+            }
+            
+            // Add terminal message
+            function addTerminalMessage(agentId, message) {
+                const terminal = document.getElementById(`terminal${agentId}`);
+                const line = document.createElement('div');
+                line.classList.add('terminal-line');
+                
+                const prompt = document.createElement('span');
+                prompt.classList.add('terminal-prompt');
+                prompt.textContent = '> ';
+                
+                const text = document.createElement('span');
+                text.textContent = message;
+                
+                line.appendChild(prompt);
+                line.appendChild(text);
+                terminal.appendChild(line);
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+            
+            // Neural activation animation
+            function animateNeuralActivation(agentId, duration) {
+                const activationArea = document.getElementById(`activation${agentId}`);
+                activationArea.innerHTML = '';
+                
+                // Create activation path
+                const path = document.createElement('div');
+                path.classList.add('activation-path');
+                activationArea.appendChild(path);
+                
+                // Create start node
+                const startNode = document.createElement('div');
+                startNode.classList.add('activation-node');
+                startNode.style.left = '0';
+                activationArea.appendChild(startNode);
+                
+                // Create end node
+                const endNode = document.createElement('div');
+                endNode.classList.add('activation-node');
+                endNode.style.right = '0';
+                activationArea.appendChild(endNode);
+                
+                // Animate the path
+                let width = 0;
+                const interval = setInterval(() => {
+                    width += 1;
+                    path.style.width = `${width}%`;
+                    
+                    if (width >= 100) {
+                        clearInterval(interval);
+                        
+                        // Create completion pulse
+                        const pulse = document.createElement('div');
+                        pulse.classList.add('activation-pulse');
+                        pulse.style.right = '0';
+                        activationArea.appendChild(pulse);
+                        
+                        // Animate pulse
+                        let size = 24;
+                        let opacity = 0.8;
+                        const pulseInterval = setInterval(() => {
+                            size += 6;
+                            opacity -= 0.05;
+                            
+                            pulse.style.width = `${size}px`;
+                            pulse.style.height = `${size}px`;
+                            pulse.style.opacity = opacity;
+                            
+                            if (opacity <= 0) {
+                                clearInterval(pulseInterval);
+                                pulse.remove();
+                            }
+                        }, 50);
+                    }
+                }, duration / 100);
+                
+                // Create traveling pulse
+                let position = 0;
+                const pulse = document.createElement('div');
+                pulse.classList.add('activation-pulse');
+                pulse.style.left = '0';
+                activationArea.appendChild(pulse);
+                
+                const pulseInterval = setInterval(() => {
+                    position += 1;
+                    pulse.style.left = `${position}%`;
+                    
+                    if (position >= 100) {
+                        clearInterval(pulseInterval);
+                        pulse.remove();
+                    }
+                }, duration / 100);
+            }
+            
+            // Agent processing sequence
+            const agentSequence = [
+                { id: 1, name: 'Planning', duration: 10000 },
+                { id: 2, name: 'Orchestration', duration: 20000 },
+                { id: 3, name: 'Document', duration: 30000 },
+                { id: 4, name: 'Obsolescence', duration: 30000 },
+                { id: 5, name: 'Records', duration: 30000 },
+                { id: 6, name: 'References', duration: 60000 },
+                { id: 7, name: 'Quantitative', duration: 60000 },
+                { id: 8, name: 'Qualitative', duration: 90000 },
+                { id: 9, name: 'Compliance', duration: 60000 },
+                { id: 10, name: 'Form', duration: 60000 }
+            ];
+            
+            // Terminal messages for each agent
+            const agentMessages = {
+                1: [
+                    "Initializing valuation framework...",
+                    "Analyzing property characteristics...",
+                    "Establishing valuation parameters...",
+                    "Developing comparative models..."
+                ],
+                2: [
+                    "Coordinating agent workflows...",
+                    "Optimizing data flow between agents...",
+                    "Allocating computational resources...",
+                    "Synchronizing agent outputs..."
+                ],
+                3: [
+                    "Scanning property documents...",
+                    "Extracting key legal clauses...",
+                    "Analyzing deed restrictions...",
+                    "Processing title information..."
+                ],
+                4: [
+                    "Assessing neighborhood factors...",
+                    "Searching for nearby infrastructure...",
+                    "Analyzing environmental impacts...",
+                    "Calculating obsolescence factors..."
+                ],
+                5: [
+                    "Accessing county records...",
+                    "Retrieving historical sales data...",
+                    "Processing tax assessment records...",
+                    "Compiling ownership history..."
+                ],
+                6: [
+                    "Searching comparable properties...",
+                    "Adjusting for property differences...",
+                    "Normalizing market data...",
+                    "Validating reference quality..."
+                ],
+                7: [
+                    "Calculating statistical models...",
+                    "Performing regression analysis...",
+                    "Adjusting for market trends...",
+                    "Computing final value range..."
+                ],
+                8: [
+                    "Assessing property condition...",
+                    "Evaluating architectural quality...",
+                    "Analyzing neighborhood appeal...",
+                    "Estimating market position..."
+                ],
+                9: [
+                    "Checking USPAP compliance...",
+                    "Verifying regulatory requirements...",
+                    "Validating calculation methods...",
+                    "Confirming report standards..."
+                ],
+                10: [
+                    "Compiling valuation data...",
+                    "Generating visualizations...",
+                    "Formatting final report...",
+                    "Applying digital signatures..."
+                ]
+            };
+            
+            // Simulate the processing
+            function startAgentProcessing(index) {
+                if (index >= agentSequence.length) {
+                    // All agents completed
+                    document.getElementById('progressStatus').textContent = "COMPLETED";
+                    document.getElementById('progressLabel').textContent = "Appraisal Ready";
+                    document.getElementById('progressText').textContent = "Appraisal complete! Valuation: $645,000. Report is ready for download.";
+                    
+                    // Create download button
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.classList.add('download-btn');
+                    downloadBtn.innerHTML = '<i class="fas fa-download"></i> DOWNLOAD FULL REPORT';
+                    downloadBtn.onclick = function() {
+                        alert("Report downloaded successfully! Thank you for using AppraiseAI.");
+                    };
+                    
+                    document.querySelector('.progress-details').appendChild(downloadBtn);
+                    return;
+                }
+                
+                const agent = agentSequence[index];
+                const agentId = agent.id;
+                const duration = agent.duration;
+                
+                // Update agent status
+                updateAgentStatus(agentId, 'active');
+                
+                // Start neural activation animation
+                animateNeuralActivation(agentId, duration);
+                
+                // Add terminal messages
+                const messages = agentMessages[agentId];
+                let messageIndex = 0;
+                const messageInterval = duration / messages.length;
+                
+                const messageTimer = setInterval(() => {
+                    if (messageIndex < messages.length) {
+                        addTerminalMessage(agentId, messages[messageIndex]);
+                        messageIndex++;
+                    } else {
+                        clearInterval(messageTimer);
+                    }
+                }, messageInterval);
+                
+                // Update overall progress
+                const progress = ((index + 1) / agentSequence.length) * 100;
+                document.getElementById('progressStatus').textContent = `${Math.round(progress)}%`;
+                
+                // Update time
+                const remainingTime = 460 - (index * 46);
+                const minutes = Math.floor(remainingTime / 60);
+                const seconds = remainingTime % 60;
+                document.getElementById('timeValue').textContent = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+                
+                // When agent completes
+                setTimeout(() => {
+                    updateAgentStatus(agentId, 'completed');
+                    startAgentProcessing(index + 1);
+                }, duration);
+            }
+            
+            // Start the simulation
+            startAgentProcessing(0);
+        });
+    </script>
+</body>
+</html>
